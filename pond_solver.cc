@@ -54,8 +54,8 @@ public:
     }
     int state = GetBoardState();
     if (IsVisited(state)) {
-      if (steps_.size() + 1 < steps_of_state_[state]) {
-        steps_of_state_[state] = steps_.size() + 1;
+      if (steps_ + 1 < steps_of_state_[state]) {
+        steps_of_state_[state] = steps_ + 1;
         prev_state_of_state_[state] =
             pair<BoardState, pair<int, int>>(previous_state, pair<int, int>(i, new_pos));
       }
@@ -63,7 +63,7 @@ public:
       return MoveStatus::VISITED;
     }
     visited_.insert(state);
-    steps_of_state_[state] = steps_.size() + 1;
+    steps_of_state_[state] = steps_ + 1;
     prev_state_of_state_[state] =
         pair<BoardState, pair<int, int>>(previous_state, pair<int, int>(i, new_pos));
     return MoveStatus::OK;
@@ -174,9 +174,9 @@ public:
           break;
         }
         if (status == MoveStatus::OK) {
-          steps_.push_back(pair<int, int>(i, j));
+          steps_++;
           Solve();
-          steps_.pop_back();
+          steps_--;
           pieces_[i].moving_axis_pos = old_pos;
         } // skipped status == MoveStatus::VISITED
       }
@@ -187,9 +187,9 @@ public:
           break;
         }
         if (status == MoveStatus::OK) {
-          steps_.push_back(pair<int, int>(i, j));
+          steps_++;
           Solve();
-          steps_.pop_back();
+          steps_--;
           pieces_[i].moving_axis_pos = old_pos;
         }
       }
@@ -199,10 +199,7 @@ public:
   int NumPieces() { return pieces_.size(); }
 
   void PrintSolution() {
-    for (int i = 0; i < steps_.size(); i++) {
-      cout << "Step " << i << ": " << steps_[i].first << " " << steps_[i].second << endl;
-    }
-    cout << "Solution printing completed" << endl;
+    cout << "TODO" << endl;
   }
 
   void SetSimulationMode() { simulation_mode_ = true; }
@@ -213,7 +210,7 @@ private:
   unordered_map<BoardState, int> steps_of_state_;
   unordered_map<BoardState, pair<BoardState, pair<int, int>>>
       prev_state_of_state_; // current_state -> previous_state, piece_index, new_pos.
-  vector<pair<int, int>> steps_;
+  int steps_ = 0;
   bool has_won_ = false;
   unordered_set<BoardState> win_states_;
   bool simulation_mode_ = false;
