@@ -1,0 +1,6 @@
+Found 58 solutions.
+0 4
+4 3
+6 0
+5 3
+Best solution has 4 steps.
