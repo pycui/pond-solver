@@ -1,7 +1,7 @@
 # pond-solver
 A solver for the mobile game "Pond"
 
-This solver utilies Depth-First-Search (DFS) to implement a Dijkstra-like algorithm. Unlikely traditional Dijkstra problem, there can be multiple winning states (destination in Dijkstra's term) in the game of Pond. The solver finds all possible winning states, and calculate shortest path for each winning state to choose a global best solution.
+This solver utilies Dijkstra algorithm to find the smallest number of steps to escape the Pond. Note there can be multiple winning states (destination in Dijkstra's term) in the game of Pond. Also, the graph is constructed dynamically. The solver stops when it finds the winning state that yeilds the smallest number of steps.
 
 Some optimizations are made to make the search fast, including:
  * skipping impossible moves early.
