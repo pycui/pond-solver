@@ -12,6 +12,7 @@ using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 using BoardState = long long int;
+
 namespace {
 constexpr const int kBoardDimension = 6;
 }
@@ -53,9 +54,9 @@ public:
       return MoveStatus::OK;
     }
     int state = GetBoardState();
+    int current_steps = GetStepsToOrigin(previous_state) + 1;
     if (IsVisited(state)) {
-      if (steps_ + 1 < steps_of_state_[state]) {
-        steps_of_state_[state] = steps_ + 1;
+      if (current_steps < GetStepsToOrigin(state)) {
         prev_state_of_state_[state] =
             pair<BoardState, pair<int, int>>(previous_state, pair<int, int>(i, new_pos));
       }
@@ -63,7 +64,6 @@ public:
       return MoveStatus::VISITED;
     }
     visited_.insert(state);
-    steps_of_state_[state] = steps_ + 1;
     prev_state_of_state_[state] =
         pair<BoardState, pair<int, int>>(previous_state, pair<int, int>(i, new_pos));
     return MoveStatus::OK;
@@ -125,7 +125,6 @@ public:
     // Save initial states.
     BoardState initial_state = GetBoardState();
     visited_.insert(initial_state);
-    steps_of_state_[initial_state] = 0;
     prev_state_of_state_[initial_state] =
         pair<BoardState, pair<int, int>>(-1, pair<int, int>(-1, -1));
     Solve();
@@ -135,12 +134,7 @@ public:
       int min_steps = 100000000;
       BoardState min_state = -1;
       for (BoardState win_state : win_states_) {
-        int current_steps = 0;
-        int state = win_state;
-        while (prev_state_of_state_[state].first != -1) {
-          state = prev_state_of_state_[state].first;
-          current_steps++;
-        }
+        int current_steps = GetStepsToOrigin(win_state);
         if (current_steps < min_steps) {
           min_steps = current_steps;
           min_state = win_state;
@@ -174,9 +168,7 @@ public:
           break;
         }
         if (status == MoveStatus::OK) {
-          steps_++;
           Solve();
-          steps_--;
           pieces_[i].moving_axis_pos = old_pos;
         } // skipped status == MoveStatus::VISITED
       }
@@ -187,9 +179,7 @@ public:
           break;
         }
         if (status == MoveStatus::OK) {
-          steps_++;
           Solve();
-          steps_--;
           pieces_[i].moving_axis_pos = old_pos;
         }
       }
@@ -198,19 +188,24 @@ public:
 
   int NumPieces() { return pieces_.size(); }
 
-  void PrintSolution() {
-    cout << "TODO" << endl;
-  }
+  void PrintSolution() { cout << "TODO" << endl; }
 
   void SetSimulationMode() { simulation_mode_ = true; }
+
+  int GetStepsToOrigin(BoardState state) {
+    int current_steps = 0;
+    while (prev_state_of_state_[state].first != -1) {
+      state = prev_state_of_state_[state].first;
+      current_steps++;
+    }
+    return current_steps;
+  }
 
 private:
   vector<Piece> pieces_;
   unordered_set<BoardState> visited_;
-  unordered_map<BoardState, int> steps_of_state_;
   unordered_map<BoardState, pair<BoardState, pair<int, int>>>
       prev_state_of_state_; // current_state -> previous_state, piece_index, new_pos.
-  int steps_ = 0;
   bool has_won_ = false;
   unordered_set<BoardState> win_states_;
   bool simulation_mode_ = false;
