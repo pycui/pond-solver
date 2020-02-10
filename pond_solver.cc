@@ -60,17 +60,17 @@ public:
     }
     int state = GetBoardState();
     if (IsVisited(state)) {
-      if (steps.size() + 1 < steps_of_state[state]) {
-        steps_of_state[state] = steps.size() + 1;
-        prev_state_of_state[state] = pair<BoardState, pair<int, int>>(
+      if (steps_.size() + 1 < steps_of_state_[state]) {
+        steps_of_state_[state] = steps_.size() + 1;
+        prev_state_of_state_[state] = pair<BoardState, pair<int, int>>(
             previous_state, pair<int, int>(i, new_pos));
       }
       pieces_[i].moving_axis_pos = old_pos;
       return MoveStatus::VISITED;
     }
     visited_.insert(state);
-    steps_of_state[state] = steps.size() + 1;
-    prev_state_of_state[state] = pair<BoardState, pair<int, int>>(
+    steps_of_state_[state] = steps_.size() + 1;
+    prev_state_of_state_[state] = pair<BoardState, pair<int, int>>(
         previous_state, pair<int, int>(i, new_pos));
     return MoveStatus::OK;
   }
@@ -131,20 +131,20 @@ public:
     // Save initial states.
     BoardState initial_state = GetBoardState();
     visited_.insert(initial_state);
-    steps_of_state[initial_state] = 0;
-    prev_state_of_state[initial_state] =
+    steps_of_state_[initial_state] = 0;
+    prev_state_of_state_[initial_state] =
         pair<BoardState, pair<int, int>>(-1, pair<int, int>(-1, -1));
     Solve();
     if (has_won_) {
       cout << "Win!" << endl;
-      cout << "Found " << win_states.size() << " solutions." << endl;
+      cout << "Found " << win_states_.size() << " solutions." << endl;
       int min_steps = 100000000;
       BoardState min_state = -1;
-      for (BoardState win_state : win_states) {
+      for (BoardState win_state : win_states_) {
         int current_steps = 0;
         int state = win_state;
-        while (prev_state_of_state[state].first != -1) {
-          state = prev_state_of_state[state].first;
+        while (prev_state_of_state_[state].first != -1) {
+          state = prev_state_of_state_[state].first;
           current_steps++;
         }
         if (current_steps < min_steps) {
@@ -153,10 +153,10 @@ public:
         }
       }
       BoardState state = min_state;
-      while (prev_state_of_state[state].first != -1) {
-        cout << prev_state_of_state[state].second.first << ' '
-             << prev_state_of_state[state].second.second << endl;
-        state = prev_state_of_state[state].first;
+      while (prev_state_of_state_[state].first != -1) {
+        cout << prev_state_of_state_[state].second.first << ' '
+             << prev_state_of_state_[state].second.second << endl;
+        state = prev_state_of_state_[state].first;
       }
       cout << "Best solution has " << min_steps << " steps." << endl;
     } else {
@@ -167,7 +167,7 @@ public:
   void Solve() {
     if (Win()) {
       has_won_ = true;
-      win_states.insert(GetBoardState());
+      win_states_.insert(GetBoardState());
       return;
     }
     BoardState prev_state = GetBoardState();
@@ -181,9 +181,9 @@ public:
           break;
         }
         if (status == MoveStatus::OK) {
-          steps.push_back(pair<int, int>(i, j));
+          steps_.push_back(pair<int, int>(i, j));
           Solve();
-          steps.pop_back();
+          steps_.pop_back();
           pieces_[i].moving_axis_pos = old_pos;
         } // skipped status == MoveStatus::VISITED
       }
@@ -195,9 +195,9 @@ public:
           break;
         }
         if (status == MoveStatus::OK) {
-          steps.push_back(pair<int, int>(i, j));
+          steps_.push_back(pair<int, int>(i, j));
           Solve();
-          steps.pop_back();
+          steps_.pop_back();
           pieces_[i].moving_axis_pos = old_pos;
         }
       }
@@ -207,8 +207,8 @@ public:
   int NumPieces() { return pieces_.size(); }
 
   void PrintSolution() {
-    for (int i = 0; i < steps.size(); i++) {
-      cout << "Step " << i << ": " << steps[i].first << " " << steps[i].second
+    for (int i = 0; i < steps_.size(); i++) {
+      cout << "Step " << i << ": " << steps_[i].first << " " << steps_[i].second
            << endl;
     }
     cout << "Solution printing completed" << endl;
@@ -219,13 +219,13 @@ public:
 private:
   vector<Piece> pieces_;
   unordered_set<BoardState> visited_;
-  unordered_map<BoardState, int> steps_of_state;
+  unordered_map<BoardState, int> steps_of_state_;
   unordered_map<BoardState, pair<BoardState, pair<int, int>>>
-      prev_state_of_state; // current_state -> previous_state, piece_index,
+      prev_state_of_state_; // current_state -> previous_state, piece_index,
                            // new_pos.
-  vector<pair<int, int>> steps;
+  vector<pair<int, int>> steps_;
   bool has_won_ = false;
-  unordered_set<BoardState> win_states;
+  unordered_set<BoardState> win_states_;
   bool simulation_mode_ = false;
 };
 
