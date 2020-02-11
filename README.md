@@ -3,7 +3,7 @@ A solver for the mobile game "Pond"
 
 For the game play and instructions, please see https://www.taptap.com/app/8708.
 
-![Example step of game play (from Tutorial)](pond-game-play-example.jpg)
+![Example step of game play (from Tutorial)](https://github.com/bcstyle/pond-solver/blob/master/pond-game-play-example.png)
 
 This solver utilies Dijkstra algorithm to find the smallest number of steps to escape the Pond. Note there can be multiple winning states (destination in Dijkstra's term) in the game of Pond. The solver stops when it finds a winning state that yeilds the smallest number of steps.
 
