@@ -32,7 +32,7 @@ MoveStatus Board::MovePiece(int i, int new_pos, BoardState previous_state, int c
   if (simulation_mode_) {
     return MoveStatus::OK;
   }
-  int state = GetBoardState();
+  BoardState state = GetBoardState();
   if (IsVisited(state)) {
     pieces_[i].moving_axis_pos = old_pos;
     return MoveStatus::VISITED;
@@ -88,10 +88,12 @@ bool Board::IsValid(int moved_index) {
 BoardState Board::GetBoardState() {
   BoardState state = 0;
   for (int i = 0; i < pieces_.size(); i++) {
-    state += pieces_[i].moving_axis_pos << (i * 3);
+    long long int i_moving_axis_pos_64 = pieces_[i].moving_axis_pos;
+    state += (i_moving_axis_pos_64 << (i * 3));
   }
   return state;
 }
+
 void Board::ResumeState(BoardState state) {
   for (int i = 0; i < pieces_.size(); i++) {
     pieces_[i].moving_axis_pos = (state >> (i * 3)) % 8;
@@ -127,14 +129,13 @@ int Board::Solve() {
     std::tie(current_steps, current_state) = queue_.top();
     queue_.pop();
     ResumeState(current_state);
+
     if (Win()) {
       win_state_ = current_state;
       return current_steps;
     }
     for (int i = 0; i < pieces_.size(); i++) {
       int old_pos = pieces_[i].moving_axis_pos;
-      int count = 0;
-      int last_move = -1;
       // up/left side
       for (int j = old_pos - 1; j >= 0; j--) {
         MoveStatus status = MovePiece(i, j, current_state, current_steps + 1);
@@ -145,8 +146,6 @@ int Board::Solve() {
           continue;
         }
         queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
-        count++;
-        last_move = j;
         pieces_[i].moving_axis_pos = old_pos;
       }
       // down/right side
@@ -159,13 +158,7 @@ int Board::Solve() {
           continue;
         }
         queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
-        count++;
-        last_move = j;
         pieces_[i].moving_axis_pos = old_pos;
-      }
-      if (count) {
-        cout << "Moved " << i << " with " << count << " different options. Last move to "
-             << last_move << " its old_pos: " << old_pos << endl;
       }
     }
   }
