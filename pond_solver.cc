@@ -137,7 +137,7 @@ public:
     // visited_.insert(initial_state);
     prev_state_of_state_[initial_state] =
         pair<BoardState, pair<int, int>>(-1, pair<int, int>(-1, -1));
-    dist_[initial_state] = 0;
+    // dist_[initial_state] = 0;
     queue_.push(std::make_pair(0, initial_state));
     int result = Solve();
     if (result != -1) {
