@@ -1,6 +1,6 @@
-Found 58 solutions.
+Win!
 0 4
+5 3
 4 3
 6 0
-5 3
 Best solution has 4 steps.
