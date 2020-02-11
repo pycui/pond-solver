@@ -56,21 +56,11 @@ public:
       return MoveStatus::OK;
     }
     int state = GetBoardState();
-    // int current_steps = GetStepsToOrigin(previous_state) + 1;
-    // int current_steps = dist_[state] + 1;
     if (IsVisited(state)) {
-      // if (current_steps < dist_[state]) {
-      //   prev_state_of_state_[state] =
-      //       pair<BoardState, pair<int, int>>(previous_state, pair<int, int>(i, new_pos));
-      //   dist_[state] = current_steps;
-      // }
-      pieces_[i].moving_axis_pos = old_pos;
       return MoveStatus::VISITED;
     }
-    // visited_.insert(state);
     prev_state_of_state_[state] =
         pair<BoardState, pair<int, int>>(previous_state, pair<int, int>(i, new_pos));
-    // dist_[state] = current_steps;
     return MoveStatus::OK;
   }
 
@@ -134,24 +124,12 @@ public:
   void SolveAll() {
     // Save initial states.
     BoardState initial_state = GetBoardState();
-    // visited_.insert(initial_state);
     prev_state_of_state_[initial_state] =
         pair<BoardState, pair<int, int>>(-1, pair<int, int>(-1, -1));
-    // dist_[initial_state] = 0;
     queue_.push(std::make_pair(0, initial_state));
     int result = Solve();
     if (result != -1) {
       cout << "Win!" << endl;
-      // cout << "Found " << win_states_.size() << " solutions." << endl;
-      // int min_steps = 100000000;
-      // BoardState min_state = -1;
-      // for (BoardState win_state : win_states_) {
-      //   int current_steps = GetStepsToOrigin(win_state);
-      //   if (current_steps < min_steps) {
-      //     min_steps = current_steps;
-      //     min_state = win_state;
-      //   }
-      // }
       BoardState state = win_state_;
       while (prev_state_of_state_[state].first != -1) {
         cout << prev_state_of_state_[state].second.first << ' '
@@ -169,15 +147,12 @@ public:
       int current_steps;
       BoardState current_state;
       std::tie(current_steps, current_state) = queue_.top();
-      cout << "Solve now..." << current_steps << ' ' << current_state << endl;
       queue_.pop();
       ResumeState(current_state);
       if (Win()) {
         win_state_ = current_state;
         return current_steps;
       }
-      // BoardState prev_state = GetBoardState();
-      int count = 0;
       for (int i = 0; i < pieces_.size(); i++) {
         int old_pos = pieces_[i].moving_axis_pos;
         // up/left side
@@ -187,7 +162,6 @@ public:
             break;
           }
           if (status == MoveStatus::OK) {
-            count++;
             queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
             // int result = Solve();
             // if (result != -1) {
@@ -203,17 +177,11 @@ public:
             break;
           }
           if (status == MoveStatus::OK) {
-            count++;
             queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
-            // int result = Solve();
-            // if (result != -1) {
-            //   return result;
-            // }
-            // pieces_[i].moving_axis_pos = old_pos;
           }
         }
+        pieces_[i].moving_axis_pos = old_pos;
       }
-      cout << "count = " << count << endl;
     }
     return -1;
   }
@@ -224,26 +192,13 @@ public:
 
   void SetSimulationMode() { simulation_mode_ = true; }
 
-  // int GetStepsToOrigin(BoardState state) {
-  //   int current_steps = 0;
-  //   while (prev_state_of_state_[state].first != -1) {
-  //     state = prev_state_of_state_[state].first;
-  //     current_steps++;
-  //   }
-  //   return current_steps;
-  // }
-
 private:
   vector<Piece> pieces_;
-  //  unordered_set<BoardState> visited_;
   unordered_map<BoardState, pair<BoardState, pair<int, int>>>
       prev_state_of_state_; // current_state -> previous_state, piece_index, new_pos.
-  // bool has_won_ = false;
-  // unordered_set<BoardState> win_states_;
   priority_queue<pair<int, BoardState>, vector<pair<int, BoardState>>,
                  std::greater<pair<int, BoardState>>>
       queue_;
-  // unordered_map<BoardState, int> dist_;
   bool simulation_mode_ = false;
   BoardState win_state_ = -1;
 };
