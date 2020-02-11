@@ -1,5 +1,5 @@
 # pond-solver
-A solver for the mobile game "Pond"
+A solver for the mobile game "Pond" (浅塘）
 
 You can via download the game (free) via https://www.taptap.com/app/8708. Instructions are also available there.
 
