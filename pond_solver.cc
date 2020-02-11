@@ -1,4 +1,5 @@
 #include <iostream>
+#include <queue>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -7,6 +8,7 @@ using std::cin;
 using std::cout;
 using std::endl;
 using std::pair;
+using std::priority_queue;
 using std::string;
 using std::unordered_map;
 using std::unordered_set;
@@ -40,7 +42,7 @@ public:
 
   bool Win() { return pieces_[0].moving_axis_pos == kBoardDimension - 2; }
 
-  MoveStatus MovePiece(int i, int new_pos, BoardState previous_state) {
+  MoveStatus MovePiece(int i, int new_pos, BoardState previous_state, int current_steps) {
     if (pieces_[i].size + new_pos > kBoardDimension) {
       return MoveStatus::OUT_OF_BOUNDARY;
     }
@@ -54,18 +56,21 @@ public:
       return MoveStatus::OK;
     }
     int state = GetBoardState();
-    int current_steps = GetStepsToOrigin(previous_state) + 1;
+    // int current_steps = GetStepsToOrigin(previous_state) + 1;
+    // int current_steps = dist_[state] + 1;
     if (IsVisited(state)) {
-      if (current_steps < GetStepsToOrigin(state)) {
-        prev_state_of_state_[state] =
-            pair<BoardState, pair<int, int>>(previous_state, pair<int, int>(i, new_pos));
-      }
+      // if (current_steps < dist_[state]) {
+      //   prev_state_of_state_[state] =
+      //       pair<BoardState, pair<int, int>>(previous_state, pair<int, int>(i, new_pos));
+      //   dist_[state] = current_steps;
+      // }
       pieces_[i].moving_axis_pos = old_pos;
       return MoveStatus::VISITED;
     }
-    visited_.insert(state);
+    // visited_.insert(state);
     prev_state_of_state_[state] =
         pair<BoardState, pair<int, int>>(previous_state, pair<int, int>(i, new_pos));
+    // dist_[state] = current_steps;
     return MoveStatus::OK;
   }
 
@@ -119,71 +124,98 @@ public:
     }
     return state;
   }
-  bool IsVisited(BoardState state) { return visited_.count(state); }
+  void ResumeState(BoardState state) {
+    for (int i = 0; i < pieces_.size(); i++) {
+      pieces_[i].moving_axis_pos = (state >> (i * 3)) % 8;
+    }
+  }
+  bool IsVisited(BoardState state) { return prev_state_of_state_.count(state); }
 
   void SolveAll() {
     // Save initial states.
     BoardState initial_state = GetBoardState();
-    visited_.insert(initial_state);
+    // visited_.insert(initial_state);
     prev_state_of_state_[initial_state] =
         pair<BoardState, pair<int, int>>(-1, pair<int, int>(-1, -1));
-    Solve();
-    if (has_won_) {
+    dist_[initial_state] = 0;
+    queue_.push(std::make_pair(0, initial_state));
+    int result = Solve();
+    if (result != -1) {
       cout << "Win!" << endl;
-      cout << "Found " << win_states_.size() << " solutions." << endl;
-      int min_steps = 100000000;
-      BoardState min_state = -1;
-      for (BoardState win_state : win_states_) {
-        int current_steps = GetStepsToOrigin(win_state);
-        if (current_steps < min_steps) {
-          min_steps = current_steps;
-          min_state = win_state;
-        }
-      }
-      BoardState state = min_state;
+      // cout << "Found " << win_states_.size() << " solutions." << endl;
+      // int min_steps = 100000000;
+      // BoardState min_state = -1;
+      // for (BoardState win_state : win_states_) {
+      //   int current_steps = GetStepsToOrigin(win_state);
+      //   if (current_steps < min_steps) {
+      //     min_steps = current_steps;
+      //     min_state = win_state;
+      //   }
+      // }
+      BoardState state = win_state_;
       while (prev_state_of_state_[state].first != -1) {
         cout << prev_state_of_state_[state].second.first << ' '
              << prev_state_of_state_[state].second.second << endl;
         state = prev_state_of_state_[state].first;
       }
-      cout << "Best solution has " << min_steps << " steps." << endl;
+      cout << "Best solution has " << result << " steps." << endl;
     } else {
       cout << "Could not find a solution." << endl;
     }
   }
 
-  void Solve() {
-    if (Win()) {
-      has_won_ = true;
-      win_states_.insert(GetBoardState());
-      return;
-    }
-    BoardState prev_state = GetBoardState();
-    for (int i = 0; i < pieces_.size(); i++) {
-      int old_pos = pieces_[i].moving_axis_pos;
-      // up/left side
-      for (int j = old_pos - 1; j >= 0; j--) {
-        MoveStatus status = MovePiece(i, j, prev_state);
-        if (status == MoveStatus::OUT_OF_BOUNDARY || status == MoveStatus::OVERLAPPED) {
-          break;
-        }
-        if (status == MoveStatus::OK) {
-          Solve();
-          pieces_[i].moving_axis_pos = old_pos;
-        } // skipped status == MoveStatus::VISITED
+  int Solve() {
+    while (!queue_.empty()) {
+      int current_steps;
+      BoardState current_state;
+      std::tie(current_steps, current_state) = queue_.top();
+      cout << "Solve now..." << current_steps << ' ' << current_state << endl;
+      queue_.pop();
+      ResumeState(current_state);
+      if (Win()) {
+        win_state_ = current_state;
+        return current_steps;
       }
-      // down/right side
-      for (int j = old_pos + 1; j < kBoardDimension; j++) {
-        MoveStatus status = MovePiece(i, j, prev_state);
-        if (status == MoveStatus::OUT_OF_BOUNDARY || status == MoveStatus::OVERLAPPED) {
-          break;
+      // BoardState prev_state = GetBoardState();
+      int count = 0;
+      for (int i = 0; i < pieces_.size(); i++) {
+        int old_pos = pieces_[i].moving_axis_pos;
+        // up/left side
+        for (int j = old_pos - 1; j >= 0; j--) {
+          MoveStatus status = MovePiece(i, j, current_state, current_steps + 1);
+          if (status == MoveStatus::OUT_OF_BOUNDARY || status == MoveStatus::OVERLAPPED) {
+            break;
+          }
+          if (status == MoveStatus::OK) {
+            count++;
+            queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
+            // int result = Solve();
+            // if (result != -1) {
+            //   return result;
+            // }
+            // pieces_[i].moving_axis_pos = old_pos;
+          } // skipped status == MoveStatus::VISITED
         }
-        if (status == MoveStatus::OK) {
-          Solve();
-          pieces_[i].moving_axis_pos = old_pos;
+        // down/right side
+        for (int j = old_pos + 1; j < kBoardDimension; j++) {
+          MoveStatus status = MovePiece(i, j, current_state, current_steps + 1);
+          if (status == MoveStatus::OUT_OF_BOUNDARY || status == MoveStatus::OVERLAPPED) {
+            break;
+          }
+          if (status == MoveStatus::OK) {
+            count++;
+            queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
+            // int result = Solve();
+            // if (result != -1) {
+            //   return result;
+            // }
+            // pieces_[i].moving_axis_pos = old_pos;
+          }
         }
       }
+      cout << "count = " << count << endl;
     }
+    return -1;
   }
 
   int NumPieces() { return pieces_.size(); }
@@ -192,23 +224,28 @@ public:
 
   void SetSimulationMode() { simulation_mode_ = true; }
 
-  int GetStepsToOrigin(BoardState state) {
-    int current_steps = 0;
-    while (prev_state_of_state_[state].first != -1) {
-      state = prev_state_of_state_[state].first;
-      current_steps++;
-    }
-    return current_steps;
-  }
+  // int GetStepsToOrigin(BoardState state) {
+  //   int current_steps = 0;
+  //   while (prev_state_of_state_[state].first != -1) {
+  //     state = prev_state_of_state_[state].first;
+  //     current_steps++;
+  //   }
+  //   return current_steps;
+  // }
 
 private:
   vector<Piece> pieces_;
-  unordered_set<BoardState> visited_;
+  //  unordered_set<BoardState> visited_;
   unordered_map<BoardState, pair<BoardState, pair<int, int>>>
       prev_state_of_state_; // current_state -> previous_state, piece_index, new_pos.
-  bool has_won_ = false;
-  unordered_set<BoardState> win_states_;
+  // bool has_won_ = false;
+  // unordered_set<BoardState> win_states_;
+  priority_queue<pair<int, BoardState>, vector<pair<int, BoardState>>,
+                 std::greater<pair<int, BoardState>>>
+      queue_;
+  // unordered_map<BoardState, int> dist_;
   bool simulation_mode_ = false;
+  BoardState win_state_ = -1;
 };
 
 Direction GetDirection(string direction_str) {
@@ -248,7 +285,7 @@ int main() {
     int piece_index;
     int new_pos;
     while (cin >> piece_index >> new_pos) {
-      MoveStatus status = board.MovePiece(piece_index, new_pos, -1);
+      MoveStatus status = board.MovePiece(piece_index, new_pos, -1, 0);
       if (status == MoveStatus::OUT_OF_BOUNDARY) {
         cout << "Piece out of boundary. Try again..." << endl;
         continue;
