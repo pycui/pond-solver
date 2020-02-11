@@ -34,6 +34,7 @@ MoveStatus Board::MovePiece(int i, int new_pos, BoardState previous_state, int c
   }
   int state = GetBoardState();
   if (IsVisited(state)) {
+    pieces_[i].moving_axis_pos = old_pos;
     return MoveStatus::VISITED;
   }
   prev_state_of_state_[state] =
@@ -106,7 +107,7 @@ void Board::SolveAll() {
   queue_.push(std::make_pair(0, initial_state));
   int result = Solve();
   if (result != -1) {
-    cout << "Win!" << endl;
+    cout << "Win! " << result << endl;
     BoardState state = win_state_;
     while (prev_state_of_state_[state].first != -1) {
       cout << prev_state_of_state_[state].second.first << ' '
@@ -132,20 +133,21 @@ int Board::Solve() {
     }
     for (int i = 0; i < pieces_.size(); i++) {
       int old_pos = pieces_[i].moving_axis_pos;
+      int count = 0;
+      int last_move = -1;
       // up/left side
       for (int j = old_pos - 1; j >= 0; j--) {
         MoveStatus status = MovePiece(i, j, current_state, current_steps + 1);
         if (status == MoveStatus::OUT_OF_BOUNDARY || status == MoveStatus::OVERLAPPED) {
           break;
         }
-        if (status == MoveStatus::OK) {
-          queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
-          // int result = Solve();
-          // if (result != -1) {
-          //   return result;
-          // }
-          // pieces_[i].moving_axis_pos = old_pos;
-        } // skipped status == MoveStatus::VISITED
+        if (status == MoveStatus::VISITED) {
+          continue;
+        }
+        queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
+        count++;
+        last_move = j;
+        pieces_[i].moving_axis_pos = old_pos;
       }
       // down/right side
       for (int j = old_pos + 1; j < kBoardDimension; j++) {
@@ -153,12 +155,23 @@ int Board::Solve() {
         if (status == MoveStatus::OUT_OF_BOUNDARY || status == MoveStatus::OVERLAPPED) {
           break;
         }
-        if (status == MoveStatus::OK) {
-          queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
+        if (status == MoveStatus::VISITED) {
+          continue;
         }
+        queue_.push(std::make_pair(current_steps + 1, GetBoardState()));
+        count++;
+        last_move = j;
+        pieces_[i].moving_axis_pos = old_pos;
       }
-      pieces_[i].moving_axis_pos = old_pos;
+      if (count) {
+        cout << "Moved " << i << " with " << count << " different options. Last move to "
+             << last_move << " its old_pos: " << old_pos << endl;
+      }
     }
   }
   return -1;
+}
+
+void Board::PrintBoard() {
+  //
 }

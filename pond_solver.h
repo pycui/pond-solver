@@ -46,6 +46,7 @@ public:
 
   void SetSimulationMode() { simulation_mode_ = true; }
 
+  void PrintBoard();
 private:
   std::vector<Piece> pieces_;
   std::unordered_map<BoardState, std::pair<BoardState, std::pair<int, int>>>
